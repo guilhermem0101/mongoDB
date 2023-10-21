@@ -164,7 +164,7 @@ db.empresa.aggregate([
     	 as : "eqptos_fornecidos" 
     	} 
     },
-    {$unwind : "$eqptos_fornecidos"}, // $unwind transforma documentos de entrada para gerar um documento para cada elemento.
+    { $unwind: "$eqptos_fornecidos" }, // $unwind Desconstrói um array em documentos individuais
     {$match: {"eqptos_fornecidos.tipo_eqpto" : /comput/i }},
     {$project: {"_id":0 , "razão_social" : 1, "tipo_empresa":1,
      "eqptos_fornecidos.marca" : 1, 
