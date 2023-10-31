@@ -1,0 +1,65 @@
+Guilherme Matheus Carvalho de Sousa
+
+//A
+db.movie.aggregate([
+  { $unwind: "$directors" }, //transforma um documento para cada diretor no vetor
+  { $group: { _id: "$directors", filmes_qtd: {$count: {}} } }, // contagem por diretor
+  { $match: {filmes_qtd: {$lte: 2}}}, // diretores com no maximo 2 filmes
+  { $project: { diretor: "$_id", filmes_qtd: 1, _id: 0 } }
+])
+
+//B
+db.movie.aggregate([
+    { $unwind: "$countries" },
+    { $unwind: "$languages" },
+    { $group: {_id: {país:  "$countries", idioma:  "$languages" },
+          qtd_pais_linguagem: {$count: {}}
+        }
+    },
+    { $sort : {qtd_pais_linguagem:-1}},
+    { $project: {_id: 0, país: "$_id.país", idioma: "$_id.idioma", qtd_pais_linguagem: 1 }}
+])
+
+//C
+db.movie.aggregate([
+  { $unwind: "$genre" }, 
+  { $unwind: "$actors" },
+  { $match: {actors: /Robert de Niro/i}},
+  { $group: { _id: "$genre", filmes_qtd: {$count: {}} } }, // contagem por genero
+  { $sort : {filmes_qtd:-1}}
+])
+
+
+//D 
+// cria nova coluna votos
+db.movie.updateMany(
+    {}, 
+    {$set : {votos: null}
+    }
+)
+
+
+//filtra e joga os dados da coluna votes para votos
+db.movie.updateMany(
+  { votes: { $ne: null } },
+  [{ $set: 
+    { votos: 
+        { $toInt: {
+            $replaceAll: { input: "$votes", find: ",", replacement: ""}
+          }
+        }
+      }
+    }]
+)
+
+
+db.movie.aggregate([
+  { $unwind: "$genre" }, // Separar os gêneros em documentos individuais
+  {$group: {
+      _id: "$genre", // Agrupar por gênero
+      totalVotos: { $sum: { $convert: { input: "$votos", to: "int", onError: 0, onNull: 0 } } }
+    }
+  },
+  { $match: { totalVotos: { $gte: 10000 } } },
+  { $sort : {totalVotos:-1}}
+])
